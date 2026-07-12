@@ -21,6 +21,7 @@ export default function AchievementRecordsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [levelFilter, setLevelFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -29,7 +30,7 @@ export default function AchievementRecordsPage() {
 
   async function loadData() {
     setLoading(true);
-    const { data } = await getAchievements(search, categoryFilter, levelFilter, yearFilter, 1, 50);
+    const { data } = await getAchievements(search, categoryFilter, levelFilter, yearFilter, 1, 50, statusFilter);
     if (data) setAchievements(data);
     setLoading(false);
   }
@@ -40,7 +41,7 @@ export default function AchievementRecordsPage() {
       loadData();
     }, 300);
     return () => clearTimeout(timer);
-  }, [search, categoryFilter, levelFilter, yearFilter]);
+  }, [search, categoryFilter, levelFilter, yearFilter, statusFilter]);
 
   function handleAdd() {
     setSelectedAchievement(null);
@@ -125,6 +126,17 @@ export default function AchievementRecordsPage() {
                 <SelectContent>
                   <SelectItem value="all">Semua Tahun</SelectItem>
                   {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || '')}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-gray-50">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="Menunggu Verifikasi">Menunggu Verifikasi</SelectItem>
+                  <SelectItem value="Diverifikasi">Diverifikasi</SelectItem>
+                  <SelectItem value="Ditolak">Ditolak</SelectItem>
                 </SelectContent>
               </Select>
             </div>

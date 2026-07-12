@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { login, signup } from '@/actions/auth';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, HelpCircle, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -41,6 +41,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
   async function clientAction(formData: FormData) {
     setIsPending(true);
@@ -224,6 +225,13 @@ export default function LoginPage() {
                  <button type="button" onClick={() => { setAuthMode('register_guru'); setError(null); setSuccess(null); }} className="text-xs px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 transition-colors">Guru</button>
                  <button type="button" onClick={() => { setAuthMode('register_ortu'); setError(null); setSuccess(null); }} className="text-xs px-4 py-2 rounded-full bg-orange-50 text-orange-700 font-semibold hover:bg-orange-100 transition-colors">Orang Tua</button>
                </div>
+               <button 
+                 type="button" 
+                 onClick={() => setShowGuideModal(true)} 
+                 className="mt-4 flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#125B34] font-medium transition-colors justify-center w-full"
+               >
+                 <HelpCircle className="w-4 h-4" /> Bagaimana cara mendaftar? Lihat Panduan
+               </button>
             </div>
           ) : (
             <div className="flex gap-2 justify-center pt-6 mt-4 border-t border-gray-100">
@@ -232,6 +240,79 @@ export default function LoginPage() {
           )}
         </div>
       </div>
+
+      {/* Modal Panduan Pendaftaran */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-100 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button 
+              type="button"
+              onClick={() => setShowGuideModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Content */}
+            <div className="overflow-y-auto pr-2 space-y-6">
+              <div className="space-y-1">
+                <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <HelpCircle className="w-6 h-6 text-[#125B34]" />
+                  Panduan Pendaftaran Akun
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Berikut cara mendaftar akun baru agar dapat mengakses sistem Talent Dashboard.
+                </p>
+              </div>
+
+              {/* Guru */}
+              <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 space-y-2">
+                <h4 className="font-bold text-sm text-[#125B34] flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#125B34] text-white flex items-center justify-center text-xs">G</span>
+                  Pendaftaran Akun Guru
+                </h4>
+                <ul className="text-xs text-gray-600 space-y-1.5 list-disc list-inside pl-1.5 leading-relaxed">
+                  <li>Pilih tombol <b>"Guru"</b> di halaman login.</li>
+                  <li>Masukkan <b>Email aktif</b> dan buat <b>Password</b> Anda.</li>
+                  <li>Klik <b>"Daftar Akun"</b>.</li>
+                  <li>Akun Anda akan masuk antrean persetujuan. Hubungi <b>Admin Sekolah</b> untuk mengaktifkan akun Anda.</li>
+                </ul>
+              </div>
+
+              {/* Orang Tua */}
+              <div className="p-4 rounded-2xl bg-orange-50/50 border border-orange-100 space-y-2">
+                <h4 className="font-bold text-sm text-orange-800 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-orange-600 text-white flex items-center justify-center text-xs">O</span>
+                  Pendaftaran Akun Orang Tua (Wali)
+                </h4>
+                <div className="p-2 bg-blue-50 text-blue-700 text-[10px] rounded-lg border border-blue-100 font-medium">
+                  Sistem menggunakan Verifikasi Ganda untuk keamanan data anak Anda.
+                </div>
+                <ul className="text-xs text-gray-600 space-y-1.5 list-disc list-inside pl-1.5 leading-relaxed">
+                  <li>Pilih tombol <b>"Orang Tua"</b> di halaman login.</li>
+                  <li>Masukkan <b>Email aktif</b> dan <b>Password</b> yang ingin dibuat.</li>
+                  <li>Masukkan <b>NIS (Nomor Induk Siswa)</b> dan <b>Tanggal Lahir</b> anak Anda secara tepat sesuai data sekolah.</li>
+                  <li>Klik <b>"Daftar Akun"</b>. Jika data anak cocok, pendaftaran berhasil.</li>
+                  <li>Tunggu verifikasi akhir dari <b>Admin Sekolah</b> sebelum Anda dapat login ke dasbor.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom Button */}
+            <div className="pt-4 border-t border-gray-100 mt-6 flex justify-end">
+              <Button 
+                type="button"
+                onClick={() => setShowGuideModal(false)}
+                className="bg-[#125B34] hover:bg-[#0B3A20] text-white rounded-xl px-6"
+              >
+                Saya Mengerti
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

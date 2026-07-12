@@ -11,7 +11,8 @@ export async function getAchievements(
   levelFilter?: string,
   yearFilter?: string,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  statusFilter?: string
 ): Promise<{ data: Achievement[] | null; count: number; error: string | null }> {
   const supabase = await createClient();
   
@@ -60,6 +61,9 @@ export async function getAchievements(
   if (yearFilter && yearFilter !== 'all') {
     // filter by date year
     query = query.gte('date', `${yearFilter}-01-01`).lte('date', `${yearFilter}-12-31`);
+  }
+  if (statusFilter && statusFilter !== 'all') {
+    query = query.eq('status', statusFilter);
   }
 
   const from = (page - 1) * limit;

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Trophy, Medal, Star, Calendar, CheckCircle, Clock } from 'lucide-react';
 import { getStudentById } from '@/actions/students';
+import ReportAchievementButton from '@/components/achievements/report-achievement-button';
 
 export default async function StudentAchievementsPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -9,6 +10,14 @@ export default async function StudentAchievementsPage(props: { params: Promise<{
   
   const { data: student } = await getStudentById(id);
   const supabase = await createClient();
+
+  // Check user role
+  const { data: { user } } = await supabase.auth.getUser();
+  let userRole = '';
+  if (user) {
+    const { data: roleData } = await supabase.from('user_roles').select('role').eq('id', user.id).single();
+    userRole = roleData?.role || '';
+  }
 
   const { data: achievements } = await supabase
     .from('achievements')
@@ -21,11 +30,16 @@ export default async function StudentAchievementsPage(props: { params: Promise<{
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Riwayat Prestasi</h1>
-        <p className="text-gray-500">
-          Catatan perjalanan prestasi dan keikutsertaan lomba dari {student?.full_name || 'Siswa'}.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Riwayat Prestasi</h1>
+          <p className="text-gray-500">
+            Catatan perjalanan prestasi dan keikutsertaan lomba dari {student?.full_name || 'Siswa'}.
+          </p>
+        </div>
+        {userRole === 'Orang Tua' && (
+          <ReportAchievementButton studentId={id} />
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
