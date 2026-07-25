@@ -107,6 +107,7 @@ export async function saveAchievement(formData: FormData): Promise<{ success: bo
   const rank = formData.get('rank') as string || null;
   const description = formData.get('description') as string || null;
   const competition_id = formData.get('competition_id') as string || null;
+  const branch_id = formData.get('branch_id') as string || null;
   const teacher_id = formData.get('teacher_id') as string || null;
   const external_mentor = formData.get('external_mentor') as string || null;
   const status = formData.get('status') as string || 'Menunggu Verifikasi';
@@ -155,7 +156,7 @@ export async function saveAchievement(formData: FormData): Promise<{ success: bo
     }
   }
 
-  const payload = {
+  const payload: any = {
     student_id,
     title,
     category,
@@ -170,6 +171,10 @@ export async function saveAchievement(formData: FormData): Promise<{ success: bo
     external_mentor,
     score
   };
+
+  if (branch_id) {
+    payload.branch_id = branch_id;
+  }
 
   let res;
   if (id) {

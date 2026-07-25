@@ -169,13 +169,13 @@ export default function StudentsPage() {
           {loading ? (
             <div className="text-center py-10 text-gray-500">Memuat data siswa...</div>
           ) : (
-            <div className="rounded-md border border-gray-100 overflow-hidden">
+            <div className="rounded-md border border-gray-100 overflow-x-auto">
               <Table>
                 <TableHeader className="bg-gray-50">
                   <TableRow>
-                    <TableHead className="font-semibold text-gray-700">NIS</TableHead>
+                    <TableHead className="font-semibold text-gray-700 hidden sm:table-cell">NIS</TableHead>
                     <TableHead className="font-semibold text-gray-700">Nama Lengkap</TableHead>
-                    <TableHead className="font-semibold text-gray-700">L/P</TableHead>
+                    <TableHead className="font-semibold text-gray-700 hidden sm:table-cell">L/P</TableHead>
                     <TableHead className="font-semibold text-gray-700">Kelas</TableHead>
                     <TableHead className="font-semibold text-gray-700">Status</TableHead>
                     <TableHead className="font-semibold text-gray-700 text-right">Aksi</TableHead>
@@ -184,9 +184,9 @@ export default function StudentsPage() {
                 <TableBody>
                   {students.map((student) => (
                     <TableRow key={student.id} className="hover:bg-gray-50/50">
-                      <TableCell className="font-medium text-gray-600">{student.nis || '-'}</TableCell>
+                      <TableCell className="font-medium text-gray-600 hidden sm:table-cell">{student.nis || '-'}</TableCell>
                       <TableCell className="font-semibold text-gray-900">{student.full_name}</TableCell>
-                      <TableCell>{student.gender === 'Laki-laki' ? 'L' : 'P'}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{student.gender === 'Laki-laki' ? 'L' : 'P'}</TableCell>
                       <TableCell>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {student.classes?.name || '-'}
@@ -204,14 +204,14 @@ export default function StudentsPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Link href={`/dashboard/students/${student.id}`}>
-                            <Button variant="outline" size="sm" className="h-8 border-gray-200 hover:bg-gray-100 text-gray-600">
+                            <Button variant="outline" size="sm" className="h-9 border-gray-200 hover:bg-gray-100 text-gray-600">
                               Edit
                             </Button>
                           </Link>
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="h-8 border-red-200 hover:bg-red-50 text-red-600"
+                            className="h-9 border-red-200 hover:bg-red-50 text-red-600"
                             onClick={() => handleDelete(student.id, student.full_name)}
                           >
                             Hapus

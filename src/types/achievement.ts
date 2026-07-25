@@ -14,10 +14,16 @@ export interface Achievement {
   status: AchievementStatus;
   rank: string | null;
   competition_id: string | null;
+  branch_id?: string | null;
   teacher_id: string | null;
   external_mentor: string | null;
   created_at: string;
   updated_at: string;
+  branch?: {
+    id: string;
+    name: string;
+    category: string;
+  } | null;
   // relations
   student?: {
     full_name: string;

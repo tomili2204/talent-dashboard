@@ -96,7 +96,7 @@ export default async function TalentDashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card className="border-gray-100 shadow-sm">
           <CardContent className="p-6 flex items-center gap-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">

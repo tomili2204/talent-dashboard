@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Trophy, Calendar, MapPin, Building, ArrowLeft, Users, Target } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import AddParticipantButton from '@/components/competitions/add-participant-button';
 
 export default async function CompetitionDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -14,11 +15,23 @@ export default async function CompetitionDetailPage(props: { params: Promise<{ i
   const supabase = await createClient();
 
   // Fetch achievements associated with this competition
-  const { data: achievements } = await supabase
+  let achievements: any[] = [];
+  const { data: achData, error: achErr } = await supabase
     .from('achievements')
-    .select('*, student:students(full_name, class:classes(name))')
+    .select('*, student:students(full_name, class:classes(name)), branch:competition_branches(name, category)')
     .eq('competition_id', id)
     .order('created_at', { ascending: false });
+
+  if (achErr) {
+    const { data: fallbackAch } = await supabase
+      .from('achievements')
+      .select('*, student:students(full_name, class:classes(name))')
+      .eq('competition_id', id)
+      .order('created_at', { ascending: false });
+    achievements = fallbackAch || [];
+  } else {
+    achievements = achData || [];
+  }
 
   // Fetch interested students from the new competition_interests table
   const interestedStudents = await getInterestedStudents(id);
@@ -52,10 +65,18 @@ export default async function CompetitionDetailPage(props: { params: Promise<{ i
               </div>
             </div>
             <div className="pt-3 border-t border-gray-50">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Tingkat & Kategori</p>
-              <div className="flex items-center gap-2 mt-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Tingkat & Cabang</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 <span className="px-2.5 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700">{competition.level}</span>
-                <span className="px-2.5 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700">{competition.category}</span>
+                {competition.branches && competition.branches.length > 0 ? (
+                  competition.branches.map((b, i) => (
+                    <span key={i} className="px-2.5 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      {b.name} ({b.category})
+                    </span>
+                  ))
+                ) : competition.category ? (
+                  <span className="px-2.5 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700">{competition.category}</span>
+                ) : null}
               </div>
             </div>
             <div className="pt-3 border-t border-gray-50">
@@ -79,26 +100,42 @@ export default async function CompetitionDetailPage(props: { params: Promise<{ i
             <CardTitle className="text-lg flex items-center gap-2">
               <Users className="w-5 h-5 text-emerald-600" /> Daftar Peserta / Prestasi
             </CardTitle>
-            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-              {achievements?.length || 0} Siswa
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                {achievements?.length || 0} Siswa
+              </span>
+              <AddParticipantButton competition={competition} participants={achievements} />
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {achievements && achievements.length > 0 ? (
               <div className="divide-y divide-gray-50">
-                {achievements.map((ach) => (
-                  <div key={ach.id} className="p-4 sm:p-6 hover:bg-gray-50/50 transition-colors flex items-center justify-between">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{ach.student?.full_name}</h4>
-                      <p className="text-sm text-gray-500 mt-0.5">Kelas {ach.student?.class?.name}</p>
+                {achievements.map((ach) => {
+                  const branchDisplayName = ach.branch?.name 
+                    ? ach.branch.name 
+                    : (ach.title && ach.title.includes(' - ') ? ach.title.split(' - ').slice(1).join(' - ') : null);
+
+                  return (
+                    <div key={ach.id} className="p-4 sm:p-6 hover:bg-gray-50/50 transition-colors flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{ach.student?.full_name}</h4>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-1">
+                          <span>Kelas {ach.student?.class?.name || '-'}</span>
+                          {branchDisplayName && (
+                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              Cabang: {branchDisplayName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          {ach.rank || 'Peserta'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        {ach.rank || 'Peserta'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="py-16 text-center">
@@ -106,6 +143,9 @@ export default async function CompetitionDetailPage(props: { params: Promise<{ i
                   <Users className="w-6 h-6 text-gray-300" />
                 </div>
                 <p className="text-gray-500 font-medium">Belum ada siswa yang tercatat mengikuti lomba ini.</p>
+                <div className="mt-4 flex justify-center">
+                  <AddParticipantButton competition={competition} participants={achievements} />
+                </div>
               </div>
             )}
           </CardContent>
@@ -128,7 +168,14 @@ export default async function CompetitionDetailPage(props: { params: Promise<{ i
                 <div key={interest.id} className="p-4 sm:p-6 hover:bg-gray-50/50 transition-colors flex items-center justify-between">
                   <div>
                     <h4 className="font-semibold text-gray-900">{interest.students?.full_name}</h4>
-                    <p className="text-sm text-gray-500 mt-0.5">NISN: {interest.students?.nisn}</p>
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                      <span>NISN: {interest.students?.nisn || '-'}</span>
+                      {interest.branch?.name && (
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          Cabang: {interest.branch.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right flex items-center gap-3">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">

@@ -23,10 +23,11 @@ interface AchievementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   achievement?: Achievement | null;
+  defaultCompetitionId?: string;
   onSuccess: () => void;
 }
 
-export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }: AchievementDialogProps) {
+export function AchievementDialog({ open, onOpenChange, achievement, defaultCompetitionId, onSuccess }: AchievementDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -48,6 +49,7 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
   const [rank, setRank] = useState<string>('');
   const [externalMentor, setExternalMentor] = useState<string>('');
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
+  const [selectedBranch, setSelectedBranch] = useState<string>('');
   
   // Load initial data
   useEffect(() => {
@@ -58,7 +60,27 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
         getTeachers('', 1, 1000)
       ]);
       if (sData) setStudents(sData);
-      if (cData) setCompetitions(cData);
+      if (cData) {
+        setCompetitions(cData);
+        // Pre-fill competition if defaultCompetitionId is provided and no achievement edit
+        if (defaultCompetitionId && !achievement) {
+          const comp = cData.find(c => c.id === defaultCompetitionId);
+          if (comp) {
+            setSelectedCompetition(comp.id);
+            setIsManualInput(false);
+            setLevel(comp.level);
+            if (comp.branches && comp.branches.length > 0) {
+              const firstBranch = comp.branches[0];
+              setSelectedBranch(firstBranch.id || '');
+              setTitle(comp.branches.length === 1 && firstBranch.name === comp.name ? comp.name : `${comp.name} - ${firstBranch.name}`);
+              setCategory(firstBranch.category);
+            } else {
+              setTitle(comp.name);
+              setCategory(comp.category || 'Akademik');
+            }
+          }
+        }
+      }
       if (tData) setTeachers(tData);
     }
     if (open) {
@@ -70,8 +92,8 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
         setExternalMentor(achievement.external_mentor || '');
         if (achievement.competition_id) {
           setSelectedCompetition(achievement.competition_id);
+          if (achievement.branch_id) setSelectedBranch(achievement.branch_id);
           setIsManualInput(false);
-          // Wait for loadData to finish to set other fields correctly, handled in another effect or just set them here
           setTitle(achievement.title);
           setCategory(achievement.category);
           setLevel(achievement.level);
@@ -84,17 +106,20 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
         }
       } else {
         setSelectedStudent('');
-        setSelectedCompetition('');
         setSelectedTeacher('');
         setIsManualInput(false);
-        setTitle('');
-        setCategory('');
-        setLevel('');
+        if (!defaultCompetitionId) {
+          setSelectedCompetition('');
+          setSelectedBranch('');
+          setTitle('');
+          setCategory('');
+          setLevel('');
+        }
         setRank('');
         setExternalMentor('');
       }
     }
-  }, [open, achievement]);
+  }, [open, achievement, defaultCompetitionId]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -125,8 +150,11 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
     if (!isManualInput) {
       const comp = competitions.find(c => c.id === selectedCompetition);
       if (comp) {
-        formData.set('title', comp.name);
+        formData.set('title', title || comp.name);
         formData.append('competition_id', comp.id);
+        if (selectedBranch) {
+          formData.append('branch_id', selectedBranch);
+        }
       }
     } else {
       formData.set('title', title);
@@ -145,6 +173,7 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
 
   const handleSelectCompetition = (val: string) => {
     setSelectedCompetition(val);
+    setSelectedBranch('');
     setCompetitionComboboxOpen(false);
     
     if (val === 'manual') {
@@ -156,9 +185,29 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
       setIsManualInput(false);
       const comp = competitions.find(c => c.id === val);
       if (comp) {
-        setTitle(comp.name);
-        setCategory(comp.category);
         setLevel(comp.level);
+        if (comp.branches && comp.branches.length > 0) {
+          const firstBranch = comp.branches[0];
+          setSelectedBranch(firstBranch.id || '');
+          setTitle(comp.branches.length === 1 && firstBranch.name === comp.name ? comp.name : `${comp.name} - ${firstBranch.name}`);
+          setCategory(firstBranch.category);
+        } else {
+          setTitle(comp.name);
+          setCategory(comp.category || 'Akademik');
+        }
+      }
+    }
+  };
+
+  const handleSelectBranch = (branchId: string | null) => {
+    if (!branchId) return;
+    setSelectedBranch(branchId);
+    const comp = competitions.find(c => c.id === selectedCompetition);
+    if (comp && comp.branches) {
+      const branch = comp.branches.find(b => b.id === branchId);
+      if (branch) {
+        setTitle(branch.name === comp.name ? comp.name : `${comp.name} - ${branch.name}`);
+        setCategory(branch.category);
       }
     }
   };
@@ -269,6 +318,34 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
             </Popover>
           </div>
 
+          {!isManualInput && selectedCompetition !== '' && (() => {
+            const currentComp = competitions.find(c => c.id === selectedCompetition);
+            if (currentComp?.branches && currentComp.branches.length > 1) {
+              return (
+                <div className="space-y-2">
+                  <Label>Cabang Lomba <span className="text-red-500">*</span></Label>
+                  <Select value={selectedBranch} onValueChange={handleSelectBranch}>
+                    <SelectTrigger className="bg-white">
+                      <span className="truncate">
+                        {currentComp.branches.find(b => b.id === selectedBranch)?.name 
+                          ? `${currentComp.branches.find(b => b.id === selectedBranch)?.name} (${currentComp.branches.find(b => b.id === selectedBranch)?.category})`
+                          : "Pilih Cabang Lomba"}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentComp.branches.map(b => (
+                        <SelectItem key={b.id || b.name} value={b.id || ''}>
+                          {b.name} ({b.category})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {isManualInput && (
             <div className="space-y-2">
               <Label>Nama Lomba (Manual) <span className="text-red-500">*</span></Label>
@@ -295,7 +372,7 @@ export function AchievementDialog({ open, onOpenChange, achievement, onSuccess }
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Kategori <span className="text-red-500">*</span></Label>
               <Select value={category} onValueChange={(val) => setCategory(val || '')} required disabled={!isManualInput && selectedCompetition !== ''}>
